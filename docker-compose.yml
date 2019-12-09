@@ -1,0 +1,45 @@
+version: '3.5'
+
+services:
+
+  db_postgres:
+    image: postgres:10.5
+    container_name: clix_dashboard_postgres
+    ports:
+      - '<Available POSTGRES PORT>:5432'
+    volumes:
+      - ./clix_dashboard_backend/clix_dashboard_backend/pg_data:/var/lib/postgresql/data
+      - ./clix_dashboard_backend/clix_dashboard_backend/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_DB=clix_dashboard_db
+      - POSTGRES_USER=admin_clixdata
+      - POSTGRES_PASSWORD=clixdata
+
+  flask-api:
+    container_name: clix_dashboard_backend
+    restart: always
+    build:
+      context: ./clix_dashboard_backend/clix_dashboard_backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./clix_dashboard_backend/clix_dashboard_backend/app:/home/clix_dashboard_backend/app
+    depends_on:
+      - "db_postgres"
+
+  client:
+    container_name: clix_dashboard_ui
+    build:
+      context: ./clix_dashboard_ui/clix_dashboard_ui
+      dockerfile: Dockerfile
+    volumes:
+      - ./clix_dashboard_ui/clix_dashboard_ui:/home/node/app
+    ports:
+      - '3000:3000'
+    depends_on:
+      - "flask-api"
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true                                                                                                                                     1,1           Top
+      - REACT_APP_HOST_URL=http://<Host IP Address>:5000
